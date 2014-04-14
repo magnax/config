@@ -1,1 +1,43 @@
-/root/.gitconfig
+[core]
+	editor = mcedit
+[user]
+	name = Maciej N.
+	email = magnax@gmail.com
+[credential]
+	helper = cache --timeout=432000
+[color]
+	ui = auto
+[alias]
+	st = status
+	ci = commit
+	co = checkout
+	di = diff
+	dc = diff --cached
+	amend = commit --amend
+	aa = add --all
+	ff = merge --ff-only
+	pullff = pull --ff-only
+	po = pull origin development
+	noff = merge --ff-only
+	fa = fetch --all
+	pom = push origin master
+	b = branch
+	ds = diff --stat=160,120
+	dh1 = diff HEAD~1
+
+	div = divergence
+
+	gn = goodnesss
+	gnc = goodness --cached
+
+	head = !git l -1
+	h = !git head
+	hp = "!. ~/.githelpers && show_git_head"
+	r = !git l -30
+	ra = !git r --all
+	l = "!. ~/.githelpers && pretty_git_log"
+	la = !git l -all
+
+[merge]
+	tool = vimdiff
+
