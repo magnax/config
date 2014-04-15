@@ -5,6 +5,7 @@
 	email = magnax@gmail.com
 [credential]
 	helper = cache --timeout=432000
+
 [color]
 	ui = auto
 [alias]
