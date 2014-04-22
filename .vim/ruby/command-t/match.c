@@ -21,7 +21,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "float.h"
+#include <float.h> /* for DBL_MAX */
 #include "match.h"
 #include "ext.h"
 #include "ruby_compat.h"
@@ -48,6 +48,9 @@ double recursive_match(matchinfo_t *m,    // sharable meta-data
     double seen_score = 0;  // remember best score seen via recursion
     int dot_file_match = 0; // true if needle matches a dot-file
     int dot_search = 0;     // true if searching for a dot
+    long i, j, distance;
+    int found;
+    double score_for_char;
 
     // do we have a memoized result we can return?
     double memoized = m->memo[needle_idx * m->needle_len + haystack_idx];
@@ -60,15 +63,15 @@ double recursive_match(matchinfo_t *m,    // sharable meta-data
         goto memoize;
     }
 
-    for (long i = needle_idx; i < m->needle_len; i++) {
+    for (i = needle_idx; i < m->needle_len; i++) {
         char c = m->needle_p[i];
         if (c == '.')
             dot_search = 1;
-        int found = 0;
+        found = 0;
 
         // similar to above, we'll stop iterating when we know we're too close
         // to the end of the string to possibly match
-        for (long j = haystack_idx;
+        for (j = haystack_idx;
              j <= m->haystack_len - (m->needle_len - i);
              j++, haystack_idx++) {
             char d = m->haystack_p[j];
@@ -87,8 +90,8 @@ double recursive_match(matchinfo_t *m,    // sharable meta-data
                 dot_search = 0;
 
                 // calculate score
-                double score_for_char = m->max_score_per_char;
-                long distance = j - last_idx;
+                score_for_char = m->max_score_per_char;
+                distance = j - last_idx;
 
                 if (distance > 1) {
                     double factor = 1.0;
@@ -146,20 +149,14 @@ memoize:
     return score;
 }
 
-// Match.new needle, string, options = {}
-VALUE CommandTMatch_initialize(int argc, VALUE *argv, VALUE self)
+void calculate_match(VALUE str,
+                     VALUE needle,
+                     VALUE always_show_dot_files,
+                     VALUE never_show_dot_files,
+                     match_t *out)
 {
-    // process arguments: 2 mandatory, 1 optional
-    VALUE str, needle, options;
-    if (rb_scan_args(argc, argv, "21", &str, &needle, &options) == 2)
-        options = Qnil;
-    str    = StringValue(str);
-    needle = StringValue(needle); // already downcased by caller
-
-    // check optional options hash for overrides
-    VALUE always_show_dot_files = CommandT_option_from_hash("always_show_dot_files", options);
-    VALUE never_show_dot_files = CommandT_option_from_hash("never_show_dot_files", options);
-
+    long i, max;
+    double score;
     matchinfo_t m;
     m.haystack_p            = RSTRING_PTR(str);
     m.haystack_len          = RSTRING_LEN(str);
@@ -171,14 +168,14 @@ VALUE CommandTMatch_initialize(int argc, VALUE *argv, VALUE self)
     m.never_show_dot_files  = never_show_dot_files == Qtrue;
 
     // calculate score
-    double score = 1.0;
+    score = 1.0;
 
     // special case for zero-length search string
     if (m.needle_len == 0) {
 
         // filter out dot files
         if (!m.always_show_dot_files) {
-            for (long i = 0; i < m.haystack_len; i++) {
+            for (i = 0; i < m.haystack_len; i++) {
                 char c = m.haystack_p[i];
 
                 if (c == '.' && (i == 0 || m.haystack_p[i - 1] == '/')) {
@@ -191,26 +188,14 @@ VALUE CommandTMatch_initialize(int argc, VALUE *argv, VALUE self)
 
         // prepare for memoization
         double memo[m.haystack_len * m.needle_len];
-        for (long i = 0, max = m.haystack_len * m.needle_len; i < max; i++)
+        for (i = 0, max = m.haystack_len * m.needle_len; i < max; i++)
             memo[i] = DBL_MAX;
         m.memo = memo;
 
         score = recursive_match(&m, 0, 0, 0, 0.0);
     }
 
-    // clean-up and final book-keeping
-    rb_iv_set(self, "@score", rb_float_new(score));
-    rb_iv_set(self, "@str", str);
-    return Qnil;
-}
-
-VALUE CommandTMatch_matches(VALUE self)
-{
-    double score = NUM2DBL(rb_iv_get(self, "@score"));
-    return score > 0 ? Qtrue : Qfalse;
-}
-
-VALUE CommandTMatch_to_s(VALUE self)
-{
-    return rb_iv_get(self, "@str");
+    // final book-keeping
+    out->path  = str;
+    out->score = score;
 }

@@ -1,4 +1,5 @@
 " general rules
+execute pathogen#infect()
 set nocompatible
 set number
 set tabstop=2
@@ -10,18 +11,30 @@ syntax on
 set background=dark
 set t_Co=256 "256 colors
 color grb256
-"colorscheme solarized
+colorscheme monokai 
 
 " slow O inserting
 :set timeout timeoutlen=1000 ttimeoutlen=100
 
+" Set the tag file search order
+set tags=./tags
+
 " status line 
 :set statusline=%<%f\ (%{&ft})\ %-4(%m%)%=%-19(%3l,%02c%03V%)
+
+:filetype plugin on
 
 " highlight current line
 set cursorline
 set cmdheight=2
 set backspace=indent,eol,start
+
+" GitGutter symbols
+let g:gitgutter_sign_added = '++'
+let g:gitgutter_sign_modified = '~'
+let g:gitgutter_sign_removed = '--'
+let g:gitgutter_sign_modified_removed = '~-'
+
 
 " Move around splits with <c-hjkl>
 nnoremap <c-j> <c-w>j

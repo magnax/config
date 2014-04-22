@@ -4,52 +4,52 @@ SHELL = /bin/sh
 #### Start of system configuration section. ####
 
 srcdir = .
-topdir = /usr/local/rvm/rubies/ruby-1.8.7-p374/lib/ruby/1.8/i686-linux
+topdir = /usr/lib/ruby/1.8/x86_64-linux
 hdrdir = $(topdir)
 VPATH = $(srcdir):$(topdir):$(hdrdir)
 exec_prefix = $(prefix)
-prefix = $(DESTDIR)/usr/local/rvm/rubies/ruby-1.8.7-p374
-libdir = $(exec_prefix)/lib
-sysconfdir = $(prefix)/etc
-localstatedir = $(prefix)/var
-vendordir = $(libdir)/ruby/vendor_ruby
-sitedir = $(libdir)/ruby/site_ruby
-includedir = $(prefix)/include
-infodir = $(datarootdir)/info
-libexecdir = $(exec_prefix)/libexec
-vendorarchdir = $(vendorlibdir)/$(sitearch)
-sitearchdir = $(sitelibdir)/$(sitearch)
-vendorlibdir = $(vendordir)/$(ruby_version)
-oldincludedir = $(DESTDIR)/usr/include
-datarootdir = $(prefix)/share
-mandir = $(datarootdir)/man
-docdir = $(datarootdir)/doc/$(PACKAGE)
-pdfdir = $(docdir)
-sbindir = $(exec_prefix)/sbin
-psdir = $(docdir)
-datadir = $(datarootdir)
-htmldir = $(docdir)
-rubylibdir = $(libdir)/ruby/$(ruby_version)
-localedir = $(datarootdir)/locale
-sharedstatedir = $(prefix)/com
-dvidir = $(docdir)
-archdir = $(rubylibdir)/$(arch)
+prefix = $(DESTDIR)/usr
 bindir = $(exec_prefix)/bin
+rubylibdir = $(libdir)/ruby/$(ruby_version)
+mandir = $(prefix)/share/man
+libdir = $(exec_prefix)/lib
+includedir = $(prefix)/include
+vendorarchdir = $(vendorlibdir)/$(sitearch)
+datarootdir = $(prefix)/share
+sitearchdir = $(sitelibdir)/$(sitearch)
+sharedstatedir = $(prefix)/com
+psdir = $(docdir)
+vendorlibdir = $(vendordir)/$(ruby_version)
+sbindir = $(exec_prefix)/sbin
+datadir = $(datarootdir)
+vendordir = $(libdir)/ruby/vendor_ruby
+localedir = $(datarootdir)/locale
+pdfdir = $(docdir)
 sitelibdir = $(sitedir)/$(ruby_version)
+htmldir = $(docdir)
+dvidir = $(docdir)
+oldincludedir = $(DESTDIR)/usr/include
+libexecdir = $(prefix)/lib/ruby1.8
+sysconfdir = $(DESTDIR)/etc
+sitedir = $(DESTDIR)/usr/local/lib/site_ruby
+infodir = $(prefix)/share/info
+docdir = $(datarootdir)/doc/$(PACKAGE)
+localstatedir = $(DESTDIR)/var
+archdir = $(rubylibdir)/$(arch)
 
 CC = gcc
 LIBRUBY = $(LIBRUBY_SO)
 LIBRUBY_A = lib$(RUBY_SO_NAME)-static.a
-LIBRUBYARG_SHARED = -Wl,-R -Wl,$(libdir) -L$(libdir) -l$(RUBY_SO_NAME)
+LIBRUBYARG_SHARED = -l$(RUBY_SO_NAME)
 LIBRUBYARG_STATIC = -l$(RUBY_SO_NAME)-static
 
 RUBY_EXTCONF_H = 
-CFLAGS   =  -fPIC -g -O2  -fPIC $(cflags) 
+CFLAGS   =  -fPIC -fno-strict-aliasing -g -g -O2  -fPIC $(cflags) 
 INCFLAGS = -I. -I$(topdir) -I$(hdrdir) -I$(srcdir)
-DEFS     = -D_FILE_OFFSET_BITS=64
-CPPFLAGS = -DHAVE_RUBY_H  $(DEFS) $(cppflags)
+DEFS     =  -DWATCHMAN_BUILD
+CPPFLAGS = -DHAVE_FCNTL_H -DHAVE_SYS_ERRNO_H -DHAVE_SYS_SOCKET_H -DHAVE_ST_H -D_FORTIFY_SOURCE=2 $(DEFS) $(cppflags)
 CXXFLAGS = $(CFLAGS) 
-ldflags  = -L.  -rdynamic -Wl,-export-dynamic
+ldflags  = -L. -Wl,-Bsymbolic-functions -Wl,-z,relro -rdynamic -Wl,-export-dynamic
 dldflags = 
 archflag = 
 DLDFLAGS = $(ldflags) $(dldflags) $(archflag)
@@ -57,12 +57,12 @@ LDSHARED = $(CC) -shared
 AR = ar
 EXEEXT = 
 
-RUBY_INSTALL_NAME = ruby
-RUBY_SO_NAME = ruby
-arch = i686-linux
-sitearch = i686-linux
+RUBY_INSTALL_NAME = ruby1.8
+RUBY_SO_NAME = ruby1.8
+arch = x86_64-linux
+sitearch = x86_64-linux
 ruby_version = 1.8
-ruby = /usr/local/rvm/rubies/ruby-1.8.7-p374/bin/ruby
+ruby = /usr/bin/ruby1.8
 RUBY = $(ruby)
 RM = rm -f
 MAKEDIRS = mkdir -p
@@ -76,7 +76,7 @@ COPY = cp
 preload = 
 
 libpath = . $(libdir)
-LIBPATH =  -L. -L$(libdir) -Wl,-R$(libdir)
+LIBPATH =  -L. -L$(libdir)
 DEFFILE = 
 
 CLEANFILES = mkmf.log
@@ -86,9 +86,9 @@ extout =
 extout_prefix = 
 target_prefix = 
 LOCAL_LIBS = 
-LIBS = $(LIBRUBYARG_SHARED)  -lrt -ldl -lcrypt -lm   -lc
-SRCS = matcher.c ext.c match.c
-OBJS = matcher.o ext.o match.o
+LIBS = $(LIBRUBYARG_SHARED)  -lpthread -lrt -ldl -lcrypt -lm   -lc
+SRCS = matcher.c match.c ext.c watchman.c
+OBJS = matcher.o match.o ext.o watchman.o
 TARGET = ext
 DLLIB = $(TARGET).so
 EXTSTATIC = 
@@ -155,7 +155,7 @@ $(DLLIB): $(OBJS) Makefile
 
 
 ###
-# Copyright 2010 Wincent Colaiuta. All rights reserved.
+# Copyright 2010-2014 Wincent Colaiuta. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -178,4 +178,4 @@ $(DLLIB): $(OBJS) Makefile
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-CFLAGS += -std=c99 -Wall -Wextra -Wno-unused-parameter
+CFLAGS += -Wall -Wextra -Wno-unused-parameter
